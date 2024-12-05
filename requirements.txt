@@ -1,0 +1,17 @@
+streamlit
+st-paywall
+requests
+pytz
+pillow
+beautifulsoup4
+pytrends
+google-api-python-client
+openai
+streamlit-js
+google-auth-oauthlib
+google-search-results
+matplotlib
+pandas
+numpy
+plotly
+newsapi-python
