@@ -10,7 +10,7 @@ st.set_page_config(
     page_icon="🚀",
 )
 
-# Initialize API key in session state
+# Initialize session state for API key
 if "api_key" not in st.session_state:
     st.session_state["api_key"] = ""
 
@@ -18,9 +18,27 @@ def get_service():
     """Initialize YouTube Data API client."""
     api_key = st.session_state.get("api_key")
     if not api_key:
-        st.error("YouTube API key is missing. Please enter it to continue.")
+        st.error("YouTube API key is missing. Please enter it in the sidebar to continue.")
         st.stop()
-    return build("youtube", "v3", developerKey=api_key)
+    try:
+        return build("youtube", "v3", developerKey=api_key)
+    except Exception as e:
+        st.error(f"Invalid API key or failed to initialize YouTube API client: {e}")
+        st.stop()
+
+# Sidebar API Key Input
+st.sidebar.write("## API Configuration")
+st.sidebar.text_input(
+    "Enter YouTube API Key:",
+    type="password",
+    key="api_key",
+    help="Enter your YouTube API key to enable functionality.",
+)
+
+# Ensure API key is entered
+if not st.session_state["api_key"]:
+    st.sidebar.warning("Please enter your YouTube API key to continue.")
+    st.stop()
 
 # Earnings Estimation Helper Functions
 def estimate_video_earnings(video_url):
@@ -58,8 +76,8 @@ def estimate_channel_earnings(channel_url):
 
     for video_id in video_ids:
         response = youtube.videos().list(part="statistics", id=video_id).execute()
-        if "items" in response and response["items"]:
-            stats = response["items"][0]['statistics']
+        if "items" in response and response['items']:
+            stats = response['items'][0]['statistics']
             view_count = int(stats.get('viewCount', 0))
             total_min += (view_count * 0.2) / 1000
             total_max += (view_count * 4.0) / 1000
