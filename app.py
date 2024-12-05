@@ -28,18 +28,19 @@ def get_service():
         st.stop()
 
 def extract_channel_id(channel_url):
-    """Extract the channel ID from a YouTube channel URL."""
+    """Extract the channel ID from a YouTube channel URL, including @handles."""
     youtube = get_service()
 
     if "youtube.com/channel/" in channel_url:
         # Standard channel URL
         return channel_url.split("channel/")[-1]
     elif "youtube.com/c/" in channel_url or "youtube.com/user/" in channel_url:
-        # Custom channel or user URL - resolve to channel ID
+        # Custom URL (c/User)
+        custom_name = channel_url.split("/")[-1]
         try:
             response = youtube.channels().list(
                 part="id",
-                forUsername=channel_url.split("/")[-1]
+                forUsername=custom_name
             ).execute()
             if 'items' in response and response['items']:
                 return response['items'][0]['id']
@@ -48,6 +49,24 @@ def extract_channel_id(channel_url):
                 st.stop()
         except Exception as e:
             st.error(f"An error occurred while resolving the custom URL: {e}")
+            st.stop()
+    elif "youtube.com/@" in channel_url:
+        # Handle @username URLs
+        handle = channel_url.split("@")[-1]
+        try:
+            response = youtube.search().list(
+                part="snippet",
+                q=f"@{handle}",
+                type="channel",
+                maxResults=1
+            ).execute()
+            if 'items' in response and response['items']:
+                return response['items'][0]['snippet']['channelId']
+            else:
+                st.error("Failed to resolve the handle to a channel ID.")
+                st.stop()
+        except Exception as e:
+            st.error(f"An error occurred while resolving the handle: {e}")
             st.stop()
     else:
         st.error("Invalid channel URL. Please provide a valid YouTube channel URL.")
